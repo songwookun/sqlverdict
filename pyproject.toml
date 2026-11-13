@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sqlverdict"
+version = "0.1.0"
+description = "Rule-based scorer for Text-to-SQL results that catches silent_wrong SQL"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "songwookun" }]
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6"]
+keywords = ["text-to-sql", "evaluation", "llm", "sql"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: Database",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Repository = "https://github.com/songwookun/sqlverdict"
+
+[project.scripts]
+sqlverdict = "sqlverdict.cli:main"
+
+[dependency-groups]
+dev = ["pytest"]
+db = ["pymysql", "psycopg[binary]", "oracledb"]
