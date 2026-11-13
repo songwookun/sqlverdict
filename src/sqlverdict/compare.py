@@ -1,4 +1,5 @@
 from sqlverdict.model import Result, Verdict
+from sqlverdict.normalize import normalize_rows
 
 # 계산 오차만 흡수 (numpy 기본 1e-5는 큰 금액에서 너무 너그러움 → code_design.md 결정 D1)
 STRICT_RTOL, STRICT_ATOL = 1e-9, 1e-9
@@ -71,4 +72,27 @@ def compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=N
     if missing:
         detail["missing_columns"] = missing
         return Verdict("silent_wrong", detail)
-    raise NotImplementedError("값 비교는 블록 2/2에서")
+    e = _project(normalize_rows(exp.rows, exp_d), [exp.columns.index(c) for c in want])
+    g = _project(normalize_rows(got.rows, got_d), [mapping[c] for c in want])
+    if len(e) != len(g):
+        return Verdict("silent_wrong", detail)
+    if not ordered:
+        e, g = sorted(e, key=sort_key), sorted(g, key=sort_key)
+
+    approx, differing = False, []
+    for er, gr in zip(e, g):
+        for c, a, b in zip(want, er, gr):
+            m = cell_match(a, b, tolerance)
+            if m is None and c not in differing:
+                differing.append(c)
+            approx = approx or m == "approx"
+
+    if differing:
+        detail["differing_columns"] = differing
+        return Verdict("silent_wrong", detail)
+    detail["approx"] = approx
+    if len(got.columns) > len(exp.columns) and not allow_extra_columns:
+        detail["extra_columns"] = [col for i, col in enumerate(got.columns)
+                                   if i not in mapping.values()]
+        return Verdict("extra_columns", detail)
+    return Verdict("correct_approx" if approx else "correct", detail)
