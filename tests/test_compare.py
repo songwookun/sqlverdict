@@ -154,6 +154,7 @@ def test_dup_join_doubles_values():
     got = R(["customer_id", "order_count"], [["A", 24], ["B", 18], ["C", 14]])
     v = compare(TOP, got, dialect="mysql")
     assert v.label == "silent_wrong" and v.detail["differing_columns"] == ["order_count"]
+    assert v.detail["ratio"] == 2.0
 
 
 def test_row_count_differs():
@@ -229,3 +230,26 @@ def test_empty_results_match():
 def test_null_vs_zero_count():
     v = compare(R(["n"], [[None]]), R(["n"], [[0]]), dialect="sqlite")
     assert v.label == "silent_wrong"
+
+
+# --- 배수 ---
+def test_no_ratio_when_inconsistent():
+    got = R(["customer_id", "order_count"], [["A", 24], ["B", 9], ["C", 7]])
+    assert "ratio" not in compare(TOP, got, dialect="mysql").detail
+
+
+def test_no_ratio_when_expected_zero():
+    v = compare(R(["n"], [[0], [5]]), R(["n"], [[0], [10]]), dialect="sqlite")
+    assert v.label == "silent_wrong" and "ratio" not in v.detail
+
+
+def test_no_ratio_for_string_column():
+    v = compare(R(["c"], [["A"]]), R(["c"], [["B"]]), dialect="sqlite")
+    assert "ratio" not in v.detail
+
+
+def test_ratio_found_on_second_differing_column():
+    exp = R(["name", "total"], [["A", 100], ["B", 50]])
+    got = R(["name", "total"], [["a", 300], ["b", 150]])
+    v = compare(exp, got, dialect="sqlite", ordered=True)
+    assert v.detail["differing_columns"] == ["name", "total"] and v.detail["ratio"] == 3.0

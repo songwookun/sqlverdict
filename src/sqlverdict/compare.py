@@ -48,6 +48,16 @@ def _project(rows, idx):
     return [tuple(r[i] for i in idx) for r in rows]
 
 
+def _ratio(e, g, k):
+    ratios = set()
+    for er, gr in zip(e, g):
+        a, b = er[k], gr[k]
+        if not (_is_num(a) and _is_num(b)) or a == 0:
+            return None
+        ratios.add(round(b / a, 6))
+    return ratios.pop() if len(ratios) == 1 else None
+
+
 def _as_result(r):
     if isinstance(r, Result):
         return r
@@ -89,6 +99,11 @@ def compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=N
 
     if differing:
         detail["differing_columns"] = differing
+        for c in differing:
+            r = _ratio(e, g, want.index(c))
+            if r is not None and r != 1:
+                detail["ratio"] = r
+                break
         return Verdict("silent_wrong", detail)
     detail["approx"] = approx
     if len(got.columns) > len(exp.columns) and not allow_extra_columns:
