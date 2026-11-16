@@ -68,7 +68,7 @@ def report(**kw):
         "by_level": {"L4": {"total": 5, "correct": 2}},
         "regressions": [], "improvements": [], "warnings": [],
         "items": [item("q001", "correct"), item("q002", "skipped_unverified"),
-                  item("q007", "silent_wrong", hints=["값이 정확히 2배: 중복 조인 의심"])],
+                  item("q007", "silent_wrong", hints=["값이 정확히 2배: 중복 조인·필터 누락 의심"])],
     }
     return {**base, **kw}
 
@@ -84,7 +84,7 @@ def test_render_design_example():
 
 def test_only_items_to_fix_are_listed():
     out = render_table(report())
-    assert "q007" in out and "중복 조인 의심" in out
+    assert "q007" in out and "중복 조인·필터 누락 의심" in out
     assert "q001" not in out and "q002" not in out
 
 

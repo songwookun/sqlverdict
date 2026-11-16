@@ -3,6 +3,15 @@ import re
 _SELECT_STAR = re.compile(r"select\s+(distinct\s+)?\*", re.IGNORECASE)
 
 
+def _ratio_hint(r):
+    head = f"값이 정확히 {r:g}배: "
+    if r in (100, 0.01):
+        return head + "비율 단위 차이(% vs 0~1) 의심"
+    if r > 1:
+        return head + "중복 조인·필터 누락 의심"
+    return head + "조건 과다·INNER JOIN으로 행 누락 의심"
+
+
 def build_hints(label, detail, pred_sql=None):
     hints = []
     er, gr = detail.get("expected_rows"), detail.get("got_rows")
@@ -11,8 +20,7 @@ def build_hints(label, detail, pred_sql=None):
     if label == "silent_wrong" and er and gr == 0:
         hints.append("결과가 비어 있음: WHERE 조건이나 조인 키 불일치 의심")
     if "ratio" in detail:
-        r = detail["ratio"]
-        hints.append(f"값이 정확히 {r:g}배: " + ("중복 조인 의심" if r > 1 else "필터 누락·기간 차이 의심"))
+        hints.append(_ratio_hint(detail["ratio"]))
     if detail.get("missing_columns"):
         hints.append("필요한 컬럼이 없음: " + ", ".join(detail["missing_columns"]))
     if detail.get("matched_by") == "position":

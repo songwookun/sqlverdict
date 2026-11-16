@@ -23,8 +23,21 @@ def test_empty_expected_and_got_no_hint():
 
 
 def test_value_ratio_up_and_down():
-    assert H("silent_wrong", ratio=2.0) == ["값이 정확히 2배: 중복 조인 의심"]
-    assert H("silent_wrong", ratio=0.5) == ["값이 정확히 0.5배: 필터 누락·기간 차이 의심"]
+    assert H("silent_wrong", ratio=2.0) == ["값이 정확히 2배: 중복 조인·필터 누락 의심"]
+    assert H("silent_wrong", ratio=0.5) == ["값이 정확히 0.5배: 조건 과다·INNER JOIN으로 행 누락 의심"]
+
+
+def test_unit_difference():
+    assert H("silent_wrong", ratio=100.0) == ["값이 정확히 100배: 비율 단위 차이(% vs 0~1) 의심"]
+    assert H("silent_wrong", ratio=0.01) == ["값이 정확히 0.01배: 비율 단위 차이(% vs 0~1) 의심"]
+
+
+def test_r001_churn_rate_unit():
+    # text2sql 회귀 셋 R001: 정답 59.13(%), 예측 0.5913
+    v = compare({"columns": ["churn_rate"], "rows": [[59.13]]},
+                {"columns": ["churn_rate"], "rows": [[0.5913]]}, dialect="sqlite")
+    assert v.label == "silent_wrong"
+    assert build_hints(v.label, v.detail) == ["값이 정확히 0.01배: 비율 단위 차이(% vs 0~1) 의심"]
 
 
 def test_missing_columns():
@@ -52,7 +65,7 @@ def test_end_to_end_with_compare():
     exp = {"columns": ["id", "n"], "rows": [["A", 12], ["B", 9]]}
     got = {"columns": ["id", "n"], "rows": [["A", 24], ["B", 18]]}
     v = compare(exp, got, dialect="mysql")
-    assert build_hints(v.label, v.detail) == ["값이 정확히 2배: 중복 조인 의심"]
+    assert build_hints(v.label, v.detail) == ["값이 정확히 2배: 중복 조인·필터 누락 의심"]
 
 
 def test_hints_never_contain_values():
