@@ -3,6 +3,8 @@ from sqlverdict.normalize import normalize_rows
 
 # 계산 오차만 흡수 (numpy 기본 1e-5는 큰 금액에서 너무 너그러움 → code_design.md 결정 D1)
 STRICT_RTOL, STRICT_ATOL = 1e-9, 1e-9
+# 허용 오차는 정답 대비 상대 비율 (0.001 = 0.1%) → 결정 D2
+DEFAULT_TOLERANCE = 0.001
 
 
 def _is_num(v):
@@ -17,7 +19,7 @@ def cell_match(exp, got, tolerance):
         noise = STRICT_ATOL + STRICT_RTOL * abs(exp)
         if diff <= noise:
             return "strict"
-        if diff <= tolerance + noise:
+        if diff <= tolerance * abs(exp) + noise:
             return "approx"
         return None
     return "strict" if exp == got else None
@@ -65,7 +67,7 @@ def _as_result(r):
 
 
 def compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=None,
-            ordered=False, compare_columns=None, allow_extra_columns=False, tolerance=0.01):
+            ordered=False, compare_columns=None, allow_extra_columns=False, tolerance=DEFAULT_TOLERANCE):
     exp_d = expected_dialect or dialect
     got_d = got_dialect or dialect or exp_d
     if exp_d is None:

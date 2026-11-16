@@ -2,7 +2,7 @@ from datetime import date
 
 from sqlverdict._version import __version__
 from sqlverdict.check import STALE_DAYS
-from sqlverdict.compare import compare
+from sqlverdict.compare import DEFAULT_TOLERANCE, compare
 from sqlverdict.hints import build_hints
 from sqlverdict.normalize import normalize_rows
 
@@ -97,7 +97,7 @@ def _warnings(golden, preds, records, regressions, today):
     return out
 
 
-def score(golden, preds, *, tolerance=0.01, include_unverified=False, head=0,
+def score(golden, preds, *, tolerance=DEFAULT_TOLERANCE, include_unverified=False, head=0,
           include_expected=False, baseline=None, today=None,
           golden_path=None, preds_path=None):
     today = today or date.today()

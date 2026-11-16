@@ -24,7 +24,7 @@ def P(rows=(("A", 12), ("B", 9)), cols=("customer_id", "order_count"), **kw):
 def S(it, pred, **kw):
     return _score_item(it, pred, golden_dialect=kw.pop("golden_dialect", "mysql"),
                        pred_dialect=kw.pop("pred_dialect", None),
-                       tolerance=kw.pop("tolerance", 0.01), **kw)
+                       tolerance=kw.pop("tolerance", 0.001), **kw)
 
 
 def test_correct_record_shape():
@@ -66,7 +66,7 @@ def test_error_kept_and_truncated():
 def test_dup_join_gets_hint():
     rec = S(G(), P(rows=(("A", 24), ("B", 18)), pred_sql="SELECT * FROM orders"))
     assert rec["label"] == "silent_wrong" and rec["diff"]["ratio"] == 2.0
-    assert rec["hints"] == ["값이 정확히 2배: 중복 조인 의심", "SELECT * 사용: 필요한 컬럼만 고르세요"]
+    assert rec["hints"] == ["값이 정확히 2배: 중복 조인·필터 누락 의심", "SELECT * 사용: 필요한 컬럼만 고르세요"]
 
 
 def test_item_tolerance_zero_overrides_global():
@@ -226,3 +226,8 @@ def test_report_is_json_serializable_with_values():
     assert rep["items"][0]["label"] == "correct"
     text = json.dumps(rep, ensure_ascii=False)
     assert '"2018-01-05"' in text and "10.5" in text
+
+
+def test_default_tolerance_is_relative_0_1_percent():
+    rep = run(golden(G()), preds(P()))
+    assert rep["run"]["tolerance"] == 0.001

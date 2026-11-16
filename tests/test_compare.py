@@ -26,12 +26,25 @@ def test_float_noise_is_strict():
 
 
 def test_rounding_difference_is_approx():
-    assert cell_match(152340.3333, 152340.33, 0.01) == "approx"
+    assert cell_match(152340.3333, 152340.33, 0.001) == "approx"
 
 
-def test_tolerance_boundary():
-    assert cell_match(100.0, 100.01, 0.01) == "approx"
-    assert cell_match(100.0, 100.02, 0.01) is None
+def test_tolerance_boundary_is_relative():
+    assert cell_match(1000, 1001, 0.001) == "approx"
+    assert cell_match(1000, 1001.1, 0.001) is None
+
+
+# D2: 상대 오차라 작은 비율 값에 너그럽지 않음
+def test_small_ratio_13_percent_off_is_wrong():
+    assert cell_match(0.053, 0.060, 0.001) is None
+
+
+def test_large_amount_small_relative_diff_is_approx():
+    assert cell_match(100_000_000, 100_050_000, 0.001) == "approx"
+
+
+def test_zero_expected_has_no_room():
+    assert cell_match(0, 0.0001, 0.001) is None
 
 
 def test_tolerance_zero_disables_approx():
@@ -59,7 +72,7 @@ def test_string_case_and_space_sensitive():
 
 
 def test_double_is_wrong():
-    assert cell_match(12, 24, 0.01) is None
+    assert cell_match(12, 24, 0.001) is None
 
 
 def test_nan_never_matches():
