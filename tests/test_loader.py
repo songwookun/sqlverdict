@@ -22,8 +22,31 @@ def test_true_false_are_bool(tmp_path):
     assert data["items"][0] == {"a": True, "b": False}
 
 
+def load_value(text):
+    from sqlverdict.loader import _Loader
+    return yaml.load(f"x: {text}", Loader=_Loader)["x"]  # noqa: S506
+
+
+@pytest.mark.parametrize("text", ["01234", "007", "12:30:00", "1_000", "0x1F", "1:30.5", "0o17"])
+def test_sneaky_numbers_stay_strings(text):
+    assert load_value(text) == text
+
+
+@pytest.mark.parametrize("text,value", [("12", 12), ("-3", -3), ("0", 0), ("+7", 7), ("1.5", 1.5),
+                                        ("1e3", 1000.0), ("1.0e3", 1000.0), (".5", 0.5), ("-2.5E-1", -0.25)])
+def test_plain_numbers_parse(text, value):
+    v = load_value(text)
+    assert v == value and type(v) is type(value)
+
+
+def test_inf_nan_still_parse():
+    import math
+    assert load_value(".inf") == math.inf and math.isnan(load_value(".nan"))
+
+
 def test_safe_loader_original_untouched():
     assert yaml.safe_load("x: yes") == {"x": True}
+    assert yaml.safe_load("x: 01234") == {"x": 668}
 
 
 def test_python_tag_rejected(tmp_path):

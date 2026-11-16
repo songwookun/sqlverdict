@@ -12,13 +12,21 @@ class _Loader(yaml.SafeLoader):
     pass
 
 
-# YAML 1.1의 yes/no/on/off → bool 변환 제거 (예: 국가 코드 NO가 False로 바뀌는 문제)
+# YAML 1.1이 값을 몰래 바꾸는 규칙 제거: yes/no→bool, 01234→8진수, 12:30:00→60진수, 1_000, 0x1F
+# 남기는 것: true/false, 10진수 정수, 소수점·지수 표기 실수, .inf/.nan
+_BOOL = re.compile(r"^(?:true|True|TRUE|false|False|FALSE)$")
+_INT = re.compile(r"^[-+]?(0|[1-9][0-9]*)$")
+_FLOAT = re.compile(r"^[-+]?([0-9]+(\.[0-9]*)?[eE][-+]?[0-9]+|[0-9]+\.[0-9]*|\.[0-9]+)$"
+                    r"|^[-+]?\.(inf|Inf|INF)$|^\.(nan|NaN|NAN)$")
+_REPLACED = {f"tag:yaml.org,2002:{t}" for t in ("bool", "int", "float")}
+
 _Loader.yaml_implicit_resolvers = {
-    ch: [r for r in rs if r[0] != "tag:yaml.org,2002:bool"]
+    ch: [r for r in rs if r[0] not in _REPLACED]
     for ch, rs in yaml.SafeLoader.yaml_implicit_resolvers.items()
 }
-_Loader.add_implicit_resolver(
-    "tag:yaml.org,2002:bool", re.compile(r"^(?:true|True|TRUE|false|False|FALSE)$"), list("tTfF"))
+_Loader.add_implicit_resolver("tag:yaml.org,2002:bool", _BOOL, list("tTfF"))
+_Loader.add_implicit_resolver("tag:yaml.org,2002:int", _INT, list("-+0123456789"))
+_Loader.add_implicit_resolver("tag:yaml.org,2002:float", _FLOAT, list("-+0123456789."))
 
 
 class InputError(Exception):
