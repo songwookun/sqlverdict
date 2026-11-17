@@ -1,0 +1,23 @@
+# 예측 결과 예시 — Text-to-SQL이 만든 SQL을 실행한 결과를 문항 id별로 적습니다.
+# 각 문항은 result(실행 결과) 또는 error(실행 실패 메시지) 중 정확히 하나.
+# dialect를 생략하면 골든셋의 dialect를 따릅니다.
+run_name: example
+items:
+  - id: Q001            # → correct
+    result: {columns: [n], rows: [[1240]]}
+
+  - id: Q002            # → silent_wrong (3배: 중복 조인 의심)
+    pred_sql: SELECT COUNT(o.customer_id) AS n FROM orders o JOIN order_items i ON i.order_id = o.id WHERE o.order_date >= '2024-01-01' AND o.order_date < '2025-01-01'
+    result: {columns: [n], rows: [[936]]}
+
+  - id: Q003            # → error
+    error: "no such column: c.nm"
+
+  - id: Q004            # → correct_approx (반올림 차이)
+    result: {columns: [avg_amount], rows: [[152340.33]]}
+
+  - id: Q005            # → correct (빈 결과가 정답)
+    result: {columns: [order_id], rows: []}
+
+  - id: Q006            # → skipped_unverified (골든셋에서 verified: false)
+    result: {columns: [category, n], rows: [[가전, 410], [도서, 530], [의류, 300]]}

@@ -1,0 +1,62 @@
+# sqlverdict 골든셋 예시 — 숫자는 가상 데이터입니다.
+# 실제 DB에서 gold_sql을 실행해 expected를 다시 뽑고 snapshot을 그날 날짜로 바꾸기 전에는 채점에 쓰지 마세요.
+# 작성 규칙: 같은 폴더의 AGENTS.md
+dialect: sqlite            # sqlite | mysql | postgresql | oracle
+snapshot: 2025-01-02       # expected를 DB에서 뽑은 날짜 (30일 지나면 경고)
+items:
+  - id: Q001
+    question: 2024년 주문 건수는?
+    level: L1
+    trap: none
+    verified: true
+    gold_sql: SELECT COUNT(*) AS n FROM orders WHERE order_date >= '2024-01-01' AND order_date < '2025-01-01'
+    expected: {columns: [n], rows: [[1240]]}
+
+  - id: Q002
+    question: 2024년에 주문한 고객은 몇 명?
+    level: L2
+    trap: dup_join
+    why: orders-order_items 조인 시 고객이 상품 수만큼 중복됨. COUNT(DISTINCT customer_id)여야 함
+    verified: true
+    gold_sql: SELECT COUNT(DISTINCT customer_id) AS n FROM orders WHERE order_date >= '2024-01-01' AND order_date < '2025-01-01'
+    expected: {columns: [n], rows: [[312]]}
+
+  - id: Q003
+    question: 2024년 매출 상위 3명 고객의 id, 이름, 매출은?
+    level: L3
+    trap: unique_id
+    why: 이름이 같은 고객(김민준)이 둘. 이름이 아니라 customer_id로 묶어야 함. 4위와 동점 없음 확인
+    verified: true
+    ordered: true
+    expected:
+      columns: [customer_id, name, revenue]
+      rows:
+        - [17, 김민준, 4820000]
+        - [203, 이서연, 4510000]
+        - [88, 김민준, 4390000]
+
+  - id: Q004
+    question: 2024년 활성 고객의 평균 주문 금액은?
+    level: L3
+    trap: biz_term
+    why: 사내 정의상 '활성 고객' = 해당 연도 주문 2회 이상. 전체 고객 평균이 아님
+    verified: true
+    expected: {columns: [avg_amount], rows: [[152340.3333]]}
+
+  - id: Q005
+    question: 2024년 환불 주문 중 금액이 1천만 원 이상인 주문 id는?
+    level: L4
+    trap: empty_ok
+    why: 2024년 환불 최대 금액은 320만 원. 결과가 없는 게 정답
+    verified: true
+    empty_ok: true
+    expected: {columns: [order_id], rows: []}
+
+  - id: Q006
+    question: 2024년 카테고리별 주문 건수는?
+    level: L2
+    trap: none
+    verified: false        # AI가 추가한 문항: 사람이 확인하고 true로 바꾸기 전까지 채점 제외
+    expected:
+      columns: [category, n]
+      rows: [[가전, 410], [도서, 530], [의류, 300]]
