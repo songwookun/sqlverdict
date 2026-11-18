@@ -48,6 +48,25 @@ def test_check_error_exits_1(ev, capsys):
     assert out.splitlines()[0].startswith("[error] Q001")
 
 
+def test_check_json(ev, capsys):
+    assert main(["check", *paths(ev), "--format", "json"]) == 0
+    d = json.loads(capsys.readouterr().out)
+    assert d["schema_version"] == "1"
+    assert d["summary"] == {"error": 0, "warn": 2}
+    assert {i["id"] for i in d["issues"]} == {None, "Q006"}
+    assert set(d["issues"][0]) == {"severity", "id", "message"}
+
+
+def test_check_json_error_first_and_exit_1(ev, capsys):
+    g = ev / "golden.yaml"
+    g.write_text(g.read_text(encoding="utf-8").replace("  - id: Q002", "  - id: Q001"), encoding="utf-8")
+    assert main(["check", str(g), "--format", "json"]) == 1
+    d = json.loads(capsys.readouterr().out)
+    assert d["summary"]["error"] == 1
+    assert d["issues"][0]["severity"] == "error" and d["issues"][0]["id"] == "Q001"
+    assert d["run"]["predictions"] is None
+
+
 # score
 def test_score_template_demo(ev, capsys):
     assert main(["score", *paths(ev), "--format", "json"]) == 0

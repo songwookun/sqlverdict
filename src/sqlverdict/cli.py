@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+from dataclasses import asdict
 from importlib.resources import files
 from pathlib import Path
 
@@ -40,6 +41,7 @@ def _parser():
     c = sub.add_parser("check", help="골든셋 검사 (+ 예측 id 짝 확인)")
     c.add_argument("golden")
     c.add_argument("predictions", nargs="?")
+    c.add_argument("--format", choices=("table", "json"), default="table")
 
     s = sub.add_parser("score", help="채점")
     s.add_argument("golden")
@@ -73,10 +75,19 @@ def _cmd_check(args):
     golden = load_golden(args.golden)
     preds = load_predictions(args.predictions) if args.predictions else None
     issues = sorted(check(golden, preds), key=lambda i: i.severity != "error")
-    for i in issues:
-        print(f"[{i.severity}] {i.id or '(전체)'}: {i.message}")
     errors = sum(i.severity == "error" for i in issues)
-    print(f"error {errors}개 · warn {len(issues) - errors}개" if issues else "문제 없음")
+    if args.format == "json":
+        _write(to_json({
+            "schema_version": "1",
+            "run": {"golden": args.golden, "predictions": args.predictions,
+                    "tool_version": __version__},
+            "summary": {"error": errors, "warn": len(issues) - errors},
+            "issues": [asdict(i) for i in issues],
+        }))
+    else:
+        for i in issues:
+            print(f"[{i.severity}] {i.id or '(전체)'}: {i.message}")
+        print(f"error {errors}개 · warn {len(issues) - errors}개" if issues else "문제 없음")
     return 1 if errors else 0
 
 

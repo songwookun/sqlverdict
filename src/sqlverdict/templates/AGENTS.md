@@ -6,7 +6,7 @@ AI 에이전트는 이 폴더에서 작업할 때 아래 규칙을 그대로 따
 ## 작업 순서 (이 폴더에서 실행)
 1. 문항은 닫힌 과거 기간으로 쓴다 ("최근 30일" X → "2024년" O)
 2. 채점 전에 gold_sql을 실행해 expected를 갱신하고 snapshot을 그날 날짜로 바꾼다
-3. `sqlverdict check golden.yaml predictions.yaml` → error가 없을 때까지 고친다
+3. `sqlverdict check golden.yaml predictions.yaml --format json` → `summary.error`가 0이 될 때까지 issues를 고친다
 4. `sqlverdict score golden.yaml predictions.yaml --format json`
 5. warnings가 있으면 2번부터 다시
 
