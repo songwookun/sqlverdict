@@ -68,6 +68,27 @@ def test_end_to_end_with_compare():
     assert build_hints(v.label, v.detail) == ["값이 정확히 2배: 중복 조인·필터 누락 의심"]
 
 
+def test_correct_approx_hint():
+    exp = {"columns": ["avg_amount"], "rows": [[152340.3333]]}
+    got = {"columns": ["avg_amount"], "rows": [[152340.33]]}
+    v = compare(exp, got, dialect="sqlite")
+    assert v.label == "correct_approx"
+    assert build_hints(v.label, v.detail) == ["허용 오차 안에서만 같음: 반올림·자료형(FLOAT/DECIMAL) 차이 의심"]
+
+
+def test_correct_has_no_hint():
+    r = {"columns": ["n"], "rows": [[3]]}
+    v = compare(r, r, dialect="sqlite")
+    assert build_hints(v.label, v.detail) == []
+
+
+def test_extra_columns_with_approx_gets_only_extra_hint():
+    exp = {"columns": ["avg_amount"], "rows": [[152340.3333]]}
+    got = {"columns": ["avg_amount", "cnt"], "rows": [[152340.33, 7]]}
+    v = compare(exp, got, dialect="sqlite")
+    assert v.label == "extra_columns" and v.detail["approx"]
+    assert build_hints(v.label, v.detail) == ["필요 없는 컬럼 포함: cnt"]
+
 def test_hints_never_contain_values():
     exp = {"columns": ["secret"], "rows": [["홍길동-010-1234"]]}
     got = {"columns": ["secret"], "rows": [["김철수-010-9999"]]}

@@ -25,6 +25,8 @@ def build_hints(label, detail, pred_sql=None):
         hints.append("필요한 컬럼이 없음: " + ", ".join(detail["missing_columns"]))
     if detail.get("matched_by") == "position":
         hints.append("이름이 달라 위치로 비교함: 컬럼 이름을 맞추거나 compare_columns 지정 권장")
+    if label == "correct_approx":
+        hints.append("허용 오차 안에서만 같음: 반올림·자료형(FLOAT/DECIMAL) 차이 의심")
     if label == "extra_columns":
         hints.append("필요 없는 컬럼 포함: " + ", ".join(detail.get("extra_columns", [])))
     if pred_sql and _SELECT_STAR.search(pred_sql):
