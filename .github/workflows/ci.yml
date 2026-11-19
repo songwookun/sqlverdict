@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - run: uv run pytest
+
+  wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv build
+      - run: |
+          uv venv /tmp/clean
+          uv pip install --python /tmp/clean/bin/python dist/*.whl
+          cd "$(mktemp -d)"
+          /tmp/clean/bin/sqlverdict init
+          /tmp/clean/bin/sqlverdict check evals/golden.yaml evals/predictions.yaml
+          /tmp/clean/bin/sqlverdict score evals/golden.yaml evals/predictions.yaml --format json > r.json
+          /tmp/clean/bin/sqlverdict score evals/golden.yaml evals/predictions.yaml --fail-on silent_wrong && exit 1 || test $? -eq 1
+
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: docker compose -f tests/db/docker-compose.yml --profile oracle up -d --wait
+      - run: uv sync --locked --group db
+      - run: uv run pytest -m db -rs
+      - if: always()
+        run: docker compose -f tests/db/docker-compose.yml --profile oracle down

@@ -184,7 +184,7 @@ sqlverdict score golden.yaml preds_v2.yaml --baseline v1.json
 - run: python scripts/run_text2sql.py --out evals/predictions.yaml   # 우리 Text-to-SQL 실행 (사용자 코드)
 - run: sqlverdict check evals/golden.yaml evals/predictions.yaml
 - run: sqlverdict score evals/golden.yaml evals/predictions.yaml --fail-on silent_wrong --fail-on error --format html -o report.html
-- uses: actions/upload-artifact@v4
+- uses: actions/upload-artifact@v7
   if: always()
   with: {name: sqlverdict-report, path: report.html}
 ```
