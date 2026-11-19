@@ -1,0 +1,39 @@
+# sqlverdict 실제 DB 검증용 (로컬 전용, 테스트 비밀번호)
+# MySQL+PG:  docker compose -f tests/db/docker-compose.yml up -d --wait
+# Oracle:    docker compose -f tests/db/docker-compose.yml --profile oracle up -d --wait oracle
+# 내리기:    docker compose -f tests/db/docker-compose.yml --profile oracle down
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: sv
+      MYSQL_DATABASE: sv
+    ports: ["127.0.0.1:13306:3306"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-psv"]
+      interval: 3s
+      retries: 40
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: sv
+      POSTGRES_DB: sv
+    ports: ["127.0.0.1:15432:5432"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      retries: 40
+
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    profiles: ["oracle"]
+    environment:
+      ORACLE_PASSWORD: sv
+      APP_USER: sv
+      APP_USER_PASSWORD: sv
+    ports: ["127.0.0.1:11521:1521"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 5s
+      retries: 60
