@@ -130,3 +130,20 @@ def test_end_to_end_with_score():
     p = Predictions("v2", None, [PredItem("q1", Result(["id", "n"], [("A", 24)]))])
     out = render_table(score(g, p, today=__import__("datetime").date(2026, 11, 15)))
     assert "정확도 0.0%" in out and "값이 정확히 2배" in out
+
+
+def test_table_escapes_terminal_control_chars():
+    rep = report(run={**report()["run"], "run_name": "\x1b]0;HACK\x07"},
+                 items=[item("q007", "error", error="boom \x1b[2J\x1b[31m가짜\x1b[0m", question="정상\u202e질문")])
+    out = render_table(rep)
+    assert "\x1b" not in out and "\u202e" not in out and "\x07" not in out
+    assert "\\x1b[2J" in out and "\\u202e" in out and "가짜" in out
+
+
+def test_control_chars_keep_alignment():
+    lines = _table(["id", "n"], [["a\x1bb", 1], ["abcdef", 2]]).splitlines()
+    assert lines[2].rindex("1") == lines[3].rindex("2")
+
+
+def test_cut_stays_in_width_with_invisible_chars():
+    assert _width(_cut("가나다라마" + "\u200b" * 40, 30)) <= 30

@@ -34,6 +34,7 @@ def test_others_untouched():
 
 # --- 날짜 · NULL · 공개 함수 ---
 
+
 def test_decimal_infinity_and_nan_do_not_crash():
     assert _number(Decimal("Infinity")) == math.inf
     assert _number(Decimal("NaN")) == _number(float("nan")) == "NaN"
@@ -88,6 +89,7 @@ def test_new_types_sortable_and_comparable():
     exp = {"columns": ["t", "u", "j"], "rows": [[time(12, 30), UUID(int=1), {"a": 1}], [time(9, 0), UUID(int=2), {"a": 2}]]}
     got = {"columns": ["t", "u", "j"], "rows": [[timedelta(hours=9), str(UUID(int=2)), '{"a": 2}'], [timedelta(hours=12, minutes=30), str(UUID(int=1)), '{"a": 1}']]}
     assert compare(exp, got, expected_dialect="postgresql", got_dialect="mysql").label == "correct"
+
 
 def test_unknown_dialect_raises():
     with pytest.raises(ValueError, match="dialect"):

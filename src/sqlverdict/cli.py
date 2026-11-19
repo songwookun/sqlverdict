@@ -12,7 +12,7 @@ from sqlverdict.compare import DEFAULT_TOLERANCE
 from sqlverdict.loader import InputError, load_golden, load_predictions
 from sqlverdict.output.html_out import render_html
 from sqlverdict.output.json_out import to_json
-from sqlverdict.output.table import render_table
+from sqlverdict.output.table import render_table, visible
 from sqlverdict.score import STATUSES, VERDICTS, score
 
 FAIL_CHOICES = tuple(x for x in VERDICTS + STATUSES if x != "correct")
@@ -61,12 +61,12 @@ def _write(text, path=None):
     if not text.endswith("\n"):
         text += "\n"
     if path:
-        with open(path, "w", encoding="utf-8", newline="\n") as f:
+        with open(path, "w", encoding="utf-8", newline="\n", errors="backslashreplace") as f:
             f.write(text)
         print(f"저장: {path}", file=sys.stderr)
         return
     if not sys.stdout.isatty() and hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
     sys.stdout.write(text)
     sys.stdout.flush()
 
@@ -86,7 +86,7 @@ def _cmd_check(args):
         }))
     else:
         for i in issues:
-            print(f"[{i.severity}] {i.id or '(전체)'}: {i.message}")
+            print(visible(f"[{i.severity}] {i.id or '(전체)'}: {i.message}"))
         print(f"error {errors}개 · warn {len(issues) - errors}개" if issues else "문제 없음")
     return 1 if errors else 0
 
@@ -97,7 +97,7 @@ def _load_baseline(path):
             data = json.load(f)
     except FileNotFoundError:
         raise InputError(f"파일이 없습니다: {path}") from None
-    except json.JSONDecodeError as e:
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
         raise InputError(f"JSON 형식 오류 ({path}): {e}") from None
     items = data.get("items") if isinstance(data, dict) else None
     if not isinstance(items, list) or not all(isinstance(r, dict) and "id" in r and "label" in r
@@ -141,6 +141,9 @@ COMMANDS = {"init": _cmd_init, "check": _cmd_check, "score": _cmd_score}
 
 
 def main(argv=None):
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="backslashreplace")
     args = _parser().parse_args(argv)
     try:
         return COMMANDS[args.cmd](args)
@@ -148,7 +151,7 @@ def main(argv=None):
         os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
         return 141
     except (InputError, OSError) as e:
-        print(f"sqlverdict: {e}", file=sys.stderr)
+        print(f"sqlverdict: {visible(str(e))}", file=sys.stderr)
         return 2
 
 

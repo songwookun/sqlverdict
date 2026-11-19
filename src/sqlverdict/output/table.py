@@ -9,8 +9,13 @@ def _width(s):
     return sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in s)
 
 
+def visible(s):
+    return "".join(ch if ch == "\n" or unicodedata.category(ch) not in ("Cc", "Cf", "Cs")
+                   else ch.encode("unicode_escape").decode() for ch in s)
+
+
 def _cut(s, limit):
-    s = " ".join(str(s).split())
+    s = visible(" ".join(str(s).split()))
     out, w = "", 0
     for ch in s:
         cw = _width(ch)
@@ -26,7 +31,8 @@ def _pad(s, width, right=False):
 
 
 def _table(headers, rows, right=()):
-    rows = [[str(c) for c in r] for r in rows]
+    headers = [visible(str(h)) for h in headers]
+    rows = [[visible(str(c)) for c in r] for r in rows]
     widths = [max(_width(x) for x in col) for col in zip(headers, *rows)]
 
     def line(cells):
@@ -83,4 +89,4 @@ def render_table(report):
         rows = [[r["id"], r["label"], r["level"] or "-", r["trap"] or "-",
                  _cut(r["question"] or "-", QUESTION_W), _cut(_info(r), INFO_W)] for r in shown]
         blocks.append(_table(["id", "판정", "level", "trap", "질문", "안내"], rows))
-    return "\n\n".join(blocks)
+    return visible("\n\n".join(blocks))

@@ -89,6 +89,7 @@ def test_extra_columns_with_approx_gets_only_extra_hint():
     assert v.label == "extra_columns" and v.detail["approx"]
     assert build_hints(v.label, v.detail) == ["필요 없는 컬럼 포함: cnt"]
 
+
 def test_hints_never_contain_values():
     exp = {"columns": ["secret"], "rows": [["홍길동-010-1234"]]}
     got = {"columns": ["secret"], "rows": [["김철수-010-9999"]]}

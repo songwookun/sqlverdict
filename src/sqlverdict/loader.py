@@ -8,8 +8,16 @@ from sqlverdict.model import Golden, GoldenItem, PredItem, Predictions, Result
 from sqlverdict.normalize import DIALECTS
 
 
+class _AliasError(yaml.YAMLError):
+    def __init__(self, mark):
+        super().__init__(f"YAML 별칭(*이름)은 쓸 수 없습니다 ({mark.line + 1}번째 줄)")
+
+
 class _Loader(yaml.SafeLoader):
-    pass
+    def compose_node(self, parent, index):
+        if self.check_event(yaml.AliasEvent):
+            raise _AliasError(self.peek_event().start_mark)
+        return super().compose_node(parent, index)
 
 
 # YAML 1.1이 값을 몰래 바꾸는 규칙 제거: yes/no→bool, 01234→8진수, 12:30:00→60진수, 1_000, 0x1F
@@ -41,6 +49,8 @@ def _read(path):
         raise InputError(f"파일이 없습니다: {path}") from None
     except yaml.YAMLError as e:
         raise InputError(f"YAML 형식 오류 ({path}): {e}") from None
+    except UnicodeDecodeError:
+        raise InputError(f"{path}: UTF-8로 저장된 파일이 아닙니다 (메모장이면 '다른 이름으로 저장' → 인코딩 UTF-8)") from None
     if not isinstance(data, dict) or not isinstance(data.get("items"), list):
         raise InputError(f"{path}: 최상위에 items 목록이 필요합니다")
     return data

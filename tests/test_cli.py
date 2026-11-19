@@ -120,3 +120,40 @@ def test_bad_baseline_json_shape(ev, capsys):
 def test_missing_golden_exit_2(tmp_path, capsys):
     assert main(["check", str(tmp_path / "nope.yaml")]) == 2
     assert capsys.readouterr().err.startswith("sqlverdict: ")
+
+
+def test_check_escapes_control_chars(ev, capsys):
+    g = ev / "golden.yaml"
+    g.write_text(g.read_text(encoding="utf-8").replace("  - id: Q006", '  - id: "Q006\\e[2J"'), encoding="utf-8")
+    main(["check", str(g)])
+    out = capsys.readouterr().out
+    assert "\x1b" not in out and "Q006\\x1b[2J" in out
+
+
+def test_error_message_escapes_control_chars(tmp_path, capsys):
+    g = tmp_path / "g.yaml"
+    g.write_text('dialect: sqlite\n"\\e]0;HACK\\a": 1\nitems: []\n', encoding="utf-8")
+    assert main(["check", str(g)]) == 2
+    err = capsys.readouterr().err
+    assert "\x1b" not in err and "\\x1b]0;HACK" in err
+
+
+@pytest.mark.parametrize("fmt", ["table", "json", "html"])
+def test_surrogate_does_not_crash(ev, capsys, fmt):
+    g = ev / "golden.yaml"
+    g.write_text(g.read_text(encoding="utf-8").replace("  - id: Q006", '  - id: "Q\\ud800"'), encoding="utf-8")
+    assert main(["score", *paths(ev), "--include-unverified", "--format", fmt]) == 0
+    assert "\\ud800" in capsys.readouterr().out
+
+
+def test_non_utf8_input_exit_2(tmp_path, capsys):
+    g = tmp_path / "g.yaml"
+    g.write_bytes("dialect: sqlite\nitems:\n  - id: 한\n".encode("cp949"))
+    assert main(["check", str(g)]) == 2
+    assert "UTF-8" in capsys.readouterr().err
+
+
+def test_non_utf8_baseline_exit_2(ev, capsys):
+    b = ev / "b.json"
+    b.write_bytes(b'{"items": [\xff')
+    assert main(["score", *paths(ev), "--baseline", str(b)]) == 2

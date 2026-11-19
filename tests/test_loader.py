@@ -17,6 +17,23 @@ def test_norway_stays_string(tmp_path):
     assert data["items"][0]["rows"] == [["NO", "yes", "on", "off", "Y"]]
 
 
+def test_alias_rejected(tmp_path):
+    p = write(tmp_path, "a: &x [1, 2]\nitems:\n  - rows: *x\n")
+    with pytest.raises(InputError, match="별칭.*번째 줄"):
+        _read(p)
+
+
+def test_anchor_without_alias_ok(tmp_path):
+    assert _read(write(tmp_path, "items:\n  - rows: &x [1]\n"))["items"][0]["rows"] == [1]
+
+
+def test_alias_bomb_rejected(tmp_path):
+    defs = ["&a0 [1,1,1,1,1,1,1,1,1,1]"] + [f"&a{i} [" + ",".join([f"*a{i-1}"] * 10) + "]" for i in range(1, 9)]
+    p = write(tmp_path, "items:\n  - rows: [" + ", ".join(defs) + "]\n")
+    with pytest.raises(InputError):
+        _read(p)
+
+
 def test_true_false_are_bool(tmp_path):
     data = _read(write(tmp_path, "items:\n  - a: true\n    b: False\n"))
     assert data["items"][0] == {"a": True, "b": False}
