@@ -1,10 +1,11 @@
 import math
+import sqlite3
 from datetime import date
 from decimal import Decimal
 
 import pytest
 
-from sqlverdict.compare import _project, cell_match, compare, match_columns, sort_key
+from sqlverdict.compare import _project, cell_match, compare, match_columns, sort_key, to_result
 
 
 def test_null_equals_null():
@@ -266,3 +267,28 @@ def test_ratio_found_on_second_differing_column():
     got = R(["name", "total"], [["a", 300], ["b", 150]])
     v = compare(exp, got, dialect="sqlite", ordered=True)
     assert v.detail["differing_columns"] == ["name", "total"] and v.detail["ratio"] == 3.0
+
+
+def _cur(sql, row_factory=None):
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = row_factory
+    cur = conn.cursor()
+    cur.execute(sql)
+    return cur
+
+
+def test_to_result_from_cursor():
+    r = to_result(_cur("SELECT 1 AS n, 'A' AS c UNION ALL SELECT 2, 'B'"))
+    assert r.columns == ["n", "c"] and r.rows == [(1, "A"), (2, "B")]
+    assert compare(r, {"columns": ["n", "c"], "rows": [[2, "B"], [1, "A"]]}, dialect="sqlite").label == "correct"
+
+
+def test_to_result_dict_rows_use_values_not_keys():
+    as_dict = lambda cur, row: {d[0]: v for d, v in zip(cur.description, row)}  # noqa: E731
+    r = to_result(_cur("SELECT 1 AS n, 'A' AS c", as_dict))
+    assert r.rows == [(1, "A")]
+
+
+def test_to_result_without_select_raises():
+    with pytest.raises(ValueError, match="SELECT"):
+        to_result(sqlite3.connect(":memory:").cursor())

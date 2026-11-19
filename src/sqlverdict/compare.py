@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from sqlverdict.model import Result, Verdict
 from sqlverdict.normalize import normalize_rows
 
@@ -58,6 +60,14 @@ def _ratio(e, g, k):
             return None
         ratios.add(round(b / a, 6))
     return ratios.pop() if len(ratios) == 1 else None
+
+
+def to_result(cursor):
+    if cursor.description is None:
+        raise ValueError("결과가 없는 커서입니다: SELECT를 실행한 커서를 넘기세요")
+    columns = [d[0] for d in cursor.description]
+    rows = [tuple(r.values()) if isinstance(r, Mapping) else tuple(r) for r in cursor.fetchall()]
+    return Result(columns, rows)
 
 
 def _as_result(r):

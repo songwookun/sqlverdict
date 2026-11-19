@@ -54,3 +54,15 @@ def test_driver_value(dialect, name, expr):
     cur.execute(f"SELECT {expr}" + (" FROM dual" if dialect == "oracle" else ""))
     got = normalize_value(cur.fetchone()[0], dialect)
     assert got == PER_DB.get((dialect, name), SAME.get(name))
+
+
+DATE_EXPR = {"mysql": "DATE '2024-01-01'", "postgresql": "DATE '2024-01-01'", "oracle": "DATE '2024-01-01'"}
+
+
+@pytest.mark.parametrize("dialect", list(CASES))
+def test_to_result_end_to_end(dialect):
+    from sqlverdict import compare, to_result
+    cur = _cursor(dialect)
+    cur.execute(f"SELECT 1 AS n, {DATE_EXPR[dialect]} AS d" + (" FROM dual" if dialect == "oracle" else ""))
+    golden = {"columns": ["n", "d"], "rows": [[1, "2024-01-01"]]}
+    assert compare(golden, to_result(cur), expected_dialect="sqlite", got_dialect=dialect).label == "correct"
