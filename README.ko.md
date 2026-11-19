@@ -2,6 +2,11 @@
 
 [English](README.md) · **한국어**
 
+[![ci](https://github.com/songwookun/sqlverdict/actions/workflows/ci.yml/badge.svg)](https://github.com/songwookun/sqlverdict/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/sqlverdict)](https://pypi.org/project/sqlverdict/)
+[![Python](https://img.shields.io/pypi/pyversions/sqlverdict)](https://pypi.org/project/sqlverdict/)
+[![License](https://img.shields.io/github/license/songwookun/sqlverdict)](https://github.com/songwookun/sqlverdict/blob/main/LICENSE)
+
 Text-to-SQL 결과를 규칙으로 채점하고, 어디를 고쳐야 하는지 알려주는 오픈소스 라이브러리.
 에러 없이 실행되지만 결과가 틀린 SQL(silent_wrong)을 잡는 것이 목표다.
 

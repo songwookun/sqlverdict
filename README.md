@@ -2,6 +2,11 @@
 
 **English** · [한국어](https://github.com/songwookun/sqlverdict/blob/main/README.ko.md)
 
+[![ci](https://github.com/songwookun/sqlverdict/actions/workflows/ci.yml/badge.svg)](https://github.com/songwookun/sqlverdict/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/sqlverdict)](https://pypi.org/project/sqlverdict/)
+[![Python](https://img.shields.io/pypi/pyversions/sqlverdict)](https://pypi.org/project/sqlverdict/)
+[![License](https://img.shields.io/github/license/songwookun/sqlverdict)](https://github.com/songwookun/sqlverdict/blob/main/LICENSE)
+
 An open-source library that scores Text-to-SQL results with rules and tells you where to fix them.
 Its goal is to catch SQL that runs without error but returns the wrong result (**silent_wrong**).
 
