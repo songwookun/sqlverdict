@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 
+from sqlverdict.hints import build_hints
 from sqlverdict.model import Result, Verdict
 from sqlverdict.normalize import normalize_rows
 
@@ -77,7 +78,17 @@ def _as_result(r):
 
 
 def compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=None,
-            ordered=False, compare_columns=None, allow_extra_columns=False, tolerance=DEFAULT_TOLERANCE):
+            ordered=False, compare_columns=None, allow_extra_columns=False,
+            tolerance=DEFAULT_TOLERANCE, pred_sql=None):
+    v = _compare(expected, got, dialect=dialect, expected_dialect=expected_dialect,
+                 got_dialect=got_dialect, ordered=ordered, compare_columns=compare_columns,
+                 allow_extra_columns=allow_extra_columns, tolerance=tolerance)
+    v.hints = build_hints(v.label, v.detail, pred_sql)
+    return v
+
+
+def _compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=None,
+             ordered=False, compare_columns=None, allow_extra_columns=False, tolerance=DEFAULT_TOLERANCE):
     exp_d = expected_dialect or dialect
     got_d = got_dialect or dialect or exp_d
     if exp_d is None:

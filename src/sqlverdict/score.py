@@ -3,7 +3,6 @@ from datetime import date
 from sqlverdict._version import __version__
 from sqlverdict.check import STALE_DAYS
 from sqlverdict.compare import DEFAULT_TOLERANCE, compare
-from sqlverdict.hints import build_hints
 from sqlverdict.normalize import normalize_rows
 
 VERDICTS = ("correct", "correct_approx", "extra_columns", "silent_wrong", "error")
@@ -31,8 +30,9 @@ def _score_item(it, pred, *, golden_dialect, pred_dialect, tolerance,
                     expected_dialect=golden_dialect, got_dialect=pred_dialect or golden_dialect,
                     ordered=it.ordered, compare_columns=it.compare_columns,
                     allow_extra_columns=it.allow_extra_columns,
-                    tolerance=tolerance if it.tolerance is None else it.tolerance)
-        rec.update(label=v.label, diff=v.detail, hints=build_hints(v.label, v.detail, pred.pred_sql))
+                    tolerance=tolerance if it.tolerance is None else it.tolerance,
+                    pred_sql=pred.pred_sql)
+        rec.update(label=v.label, diff=v.detail, hints=v.hints)
         if head:
             rows = normalize_rows(pred.result.rows[:head], pred_dialect or golden_dialect)
             rec["got_head"] = {"columns": pred.result.columns, "rows": [list(r) for r in rows]}

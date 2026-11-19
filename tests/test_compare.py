@@ -292,3 +292,16 @@ def test_to_result_dict_rows_use_values_not_keys():
 def test_to_result_without_select_raises():
     with pytest.raises(ValueError, match="SELECT"):
         to_result(sqlite3.connect(":memory:").cursor())
+
+
+def test_compare_fills_hints():
+    exp = {"columns": ["n"], "rows": [[12]]}
+    v = compare(exp, {"columns": ["n"], "rows": [[24]]}, dialect="mysql")
+    assert v.hints == ["값이 정확히 2배: 중복 조인·필터 누락 의심"]
+    assert compare(exp, exp, dialect="mysql").hints == []
+
+
+def test_compare_pred_sql_hint():
+    r = {"columns": ["n"], "rows": [[1]]}
+    v = compare(r, r, dialect="mysql", pred_sql="select * from t")
+    assert v.label == "correct" and v.hints == ["SELECT * 사용: 필요한 컬럼만 고르세요"]
