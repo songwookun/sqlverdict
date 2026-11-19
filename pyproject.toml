@@ -37,3 +37,7 @@ sqlverdict = "sqlverdict.cli:main"
 [dependency-groups]
 dev = ["pytest"]
 db = ["pymysql", "psycopg[binary]", "oracledb"]
+
+[tool.pytest.ini_options]
+markers = ["db: 실제 DB 필요 (tests/db/docker-compose.yml을 먼저 띄울 것)"]
+addopts = "-m 'not db'"
