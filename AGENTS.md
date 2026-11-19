@@ -1,6 +1,6 @@
 # AGENTS.md — sqlverdict 저장소 작업 지침
 
-Text-to-SQL 결과를 규칙으로 채점하는 라이브러리. 사용법은 README.md.
+Text-to-SQL 결과를 규칙으로 채점하는 라이브러리. 사용법은 README.md (한국어 README.ko.md).
 (`sqlverdict init`이 사용자 프로젝트에 만드는 `evals/AGENTS.md`는 `src/sqlverdict/templates/AGENTS.md`이며 이 파일과 별개다.)
 
 ## 명령
@@ -28,4 +28,5 @@ Text-to-SQL 결과를 규칙으로 채점하는 라이브러리. 사용법은 RE
 - normalize 규칙을 바꾸면 `tests/test_normalize.py`와 `tests/db/test_real_drivers.py`의 `SAME`/`PER_DB` 표를 함께 고치고, README "DB별 값 처리 규칙"·"알려진 한계"도 맞춘다.
 - 템플릿을 바꾸면 `tests/test_cli.py`의 데모 판정 개수 테스트를 확인한다.
 - 판정·힌트 문구를 바꾸면 README 예시 출력도 다시 뽑는다.
+- README는 영어(`README.md`)와 한국어(`README.ko.md`) 두 벌이다. 한쪽을 고치면 다른 쪽도 같이 고친다.
 - 커밋 메시지는 `모듈: 무엇을 (왜)` 형식, 한국어.
