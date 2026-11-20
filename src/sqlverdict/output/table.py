@@ -45,6 +45,15 @@ def _pct(a, b):
     return f"{a / b:.1%}" if b else "-"
 
 
+def _acc(s):
+    if s["accuracy"] is None:
+        return "-"
+    out = f"{s['accuracy']:.1%}"
+    if s.get("correct_approx") and s.get("accuracy_with_approx") is not None:
+        out += f" (근사 포함 {s['accuracy_with_approx']:.1%})"
+    return out
+
+
 def _groups(title, groups):
     rows = [[k, g["total"], g["correct"], _pct(g["correct"], g["total"])] for k, g in groups.items()]
     return _table([title, "채점", "정답", "정답률"], rows, right={1, 2, 3})
@@ -69,7 +78,7 @@ def render_table(report):
     if report["warnings"]:
         blocks.append("\n".join(f"! {w}" for w in report["warnings"]))
 
-    acc = "-" if s["accuracy"] is None else f"{s['accuracy']:.1%}"
+    acc = _acc(s)
     lines = [f"정확도 {acc}  (correct {s['correct']} / 채점 {s['scored']} / 전체 {s['total']})",
              "판정  " + " · ".join(f"{k} {s[k]}" for k in VERDICTS),
              "제외  " + " · ".join(f"{k} {s[k]}" for k in STATUSES)]

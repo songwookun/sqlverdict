@@ -75,7 +75,7 @@ The example numbers are made up. To use it for real:
 | `silent_wrong` | Ran fine, result differs | Count tripled by a duplicate join | No |
 | `error` | Execution failed on your side | Unknown column name | No |
 
-Accuracy = `correct` ÷ scored items. To compare with tools that round before comparing, look at `correct + correct_approx`.
+Accuracy = `correct` ÷ scored items. `accuracy_with_approx` = (`correct` + `correct_approx`) ÷ scored items — use it to compare with tools that round before comparing (the table shows it when any `correct_approx` exists). In `--baseline` comparisons both `correct` and `correct_approx` count as passing, so moving between them is not a regression.
 
 Items that were not scored get a **status** instead of a verdict:
 
@@ -86,7 +86,7 @@ Items that were not scored get a **status** instead of a verdict:
 | `missing_prediction` | No prediction for this item |
 
 ### Comparison rules
-- **Column matching**: same name (case-insensitive) first, otherwise by position (1st ↔ 1st). It never hunts for a column with similar values — so a coincidental match can't pass.
+- **Column matching**: same name (case-insensitive) first; golden columns left without a name match are paired, in order, with the prediction columns not used by name. It never hunts for a column with similar values — so a coincidental match can't pass.
 - **Row order**: rows are sorted before comparing. Only `ordered: true` items compare order.
 - **Column count**: more columns than needed → `extra_columns` (not counted as correct, as in Spider/BIRD). A required column missing → `silent_wrong`.
 
@@ -128,7 +128,7 @@ items:
 | `compare_columns` | | Compare only these columns |
 | `allow_extra_columns` | | Allow extra columns in the prediction |
 | `tolerance` | | Per-item tolerance (relative; 0 = strict only) |
-| `empty_ok` | | An empty result is the correct answer |
+| `empty_ok` | | An empty result is the correct answer. If golden and prediction both have 0 rows, columns are not compared (extra columns only produce a hint) |
 | `gold_sql` | | The golden SQL. Never executed; used by `check` and for re-pulling answers |
 
 Authoring rules (mix in trap items, ask only about closed past periods, …) are in the `evals/AGENTS.md` that `init` creates; `check` enforces what can be checked mechanically.
@@ -218,7 +218,7 @@ v.hints    # ['값이 정확히 2배: 중복 조인·필터 누락 의심',     
 
 - A dict of the form `{"columns": [...], "rows": [[...]]}` works too.
 - When the golden and prediction databases differ (e.g. migration checks): `expected_dialect="mysql", got_dialect="postgresql"`.
-- Other arguments: `ordered`, `compare_columns`, `allow_extra_columns`, `tolerance` (same meaning as the golden fields).
+- Other arguments: `ordered`, `compare_columns`, `allow_extra_columns`, `tolerance`, `empty_ok` (same meaning as the golden fields).
 
 ## Per-database value rules
 

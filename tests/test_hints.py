@@ -40,6 +40,25 @@ def test_r001_churn_rate_unit():
     assert build_hints(v.label, v.detail) == ["값이 정확히 0.01배: 비율 단위 차이(% vs 0~1) 의심"]
 
 
+def test_non_simple_ratio_is_neutral():
+    assert H("silent_wrong", ratio=0.849067) == ["값이 약 0.849배: 집계 대상·계산식·조건 차이 의심"]
+    assert H("silent_wrong", ratio=1.21581) == ["값이 약 1.22배: 집계 대상·계산식·조건 차이 의심"]
+
+
+def test_third_is_simple_multiple():
+    assert H("silent_wrong", ratio=0.333333) == ["값이 정확히 0.333333배: 조건 과다·INNER JOIN으로 행 누락 의심"]
+
+
+def test_report2_revenue_definition():
+    v = compare({"columns": ["revenue"], "rows": [[5962902.01]]},
+                {"columns": ["revenue"], "rows": [[5062902.01]]}, dialect="sqlite")
+    assert v.label == "silent_wrong" and v.hints == ["값이 약 0.849배: 집계 대상·계산식·조건 차이 의심"]
+
+
+def test_zero_ratio_does_not_crash():
+    assert H("silent_wrong", ratio=0.0) == ["값이 0으로 나옴: 조건 과다·INNER JOIN으로 행 누락 의심"]
+
+
 def test_missing_columns():
     assert H("silent_wrong", missing_columns=["cnt"]) == ["필요한 컬럼이 없음: cnt"]
 

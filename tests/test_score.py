@@ -6,7 +6,7 @@ import pytest
 
 from sqlverdict import __version__
 from sqlverdict.model import Golden, GoldenItem, PredItem, Predictions, Result
-from sqlverdict.score import _group, _score_item, _summary, score
+from sqlverdict.score import _baseline_diff, _group, _score_item, _summary, score
 
 EXP = Result(["customer_id", "order_count"], [("A", 12), ("B", 9)])
 
@@ -129,8 +129,9 @@ def test_no_scored_accuracy_none():
 
 def test_all_labels_present_in_summary():
     s = _summary([])
-    assert set(s) == {"total", "scored", "accuracy", "correct", "correct_approx", "extra_columns",
-                      "silent_wrong", "error", "skipped_unverified", "unscorable", "missing_prediction"}
+    assert set(s) == {"total", "scored", "accuracy", "accuracy_with_approx", "correct", "correct_approx",
+                      "extra_columns", "silent_wrong", "error", "skipped_unverified", "unscorable",
+                      "missing_prediction"}
 
 
 def test_group_by_trap_counts_scored_only():
@@ -231,3 +232,27 @@ def test_report_is_json_serializable_with_values():
 def test_default_tolerance_is_relative_0_1_percent():
     rep = run(golden(G()), preds(P()))
     assert rep["run"]["tolerance"] == 0.001
+
+
+def test_empty_ok_passed_to_compare():
+    it = G(expected=Result(["order_id"], []), empty_ok=True)
+    rec = S(it, P(rows=(), cols=("order_id", "order_status")))
+    assert rec["label"] == "correct" and rec["hints"] == ["필요 없는 컬럼 포함: order_status"]
+
+
+def _one(label):
+    return {"id": "A", "label": label, "trap": "none", "level": "L1"}
+
+
+def test_report4_approx_not_regression():
+    rec = _one("correct_approx")
+    regs, imps = _baseline_diff([rec], {"items": [_one("correct")]})
+    assert regs == [] and imps == []
+    s = _summary([rec])
+    assert s["accuracy"] == 0.0 and s["accuracy_with_approx"] == 1.0
+
+
+def test_correct_to_silent_wrong_still_regression():
+    regs, _ = _baseline_diff([_one("silent_wrong")], {"items": [_one("correct_approx")]})
+    assert regs == ["A"]
+

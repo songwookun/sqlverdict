@@ -94,7 +94,7 @@ def test_baseline_round_trip(ev, capsys):
     base = ev / "base.json"
     main(["score", *paths(ev), "--format", "json", "-o", str(base)])
     p = ev / "predictions.yaml"
-    p.write_text(p.read_text(encoding="utf-8").replace("rows: [[1240]]", "rows: [[1241]]"), encoding="utf-8")
+    p.write_text(p.read_text(encoding="utf-8").replace("rows: [[1240]]", "rows: [[1300]]"), encoding="utf-8")
     main(["score", *paths(ev), "--format", "json", "--baseline", str(base)])
     assert json.loads(capsys.readouterr().out)["regressions"] == ["Q001"]
 

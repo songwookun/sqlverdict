@@ -97,9 +97,9 @@ def test_fallback_to_position():
     assert m == {"customer_id": 0, "order_count": 1} and by == "position"
 
 
-def test_position_cannot_reuse_name_matched_column():
+def test_leftover_columns_pair_in_order():
     m, by = match_columns(["a", "b"], ["b", "x"], ["a", "b"])
-    assert m == {"a": None, "b": 0} and by == "position"
+    assert m == {"a": 1, "b": 0} and by == "position"
 
 
 def test_missing_column_is_none():
@@ -305,3 +305,31 @@ def test_compare_pred_sql_hint():
     r = {"columns": ["n"], "rows": [[1]]}
     v = compare(r, r, dialect="mysql", pred_sql="select * from t")
     assert v.label == "correct" and v.hints == ["SELECT * 사용: 필요한 컬럼만 고르세요"]
+
+
+def test_report1_name_and_leftover_mix_is_correct():
+    exp = {"columns": ["seller_state", "n"], "rows": [["SP", 1849], ["PR", 349]]}
+    got = {"columns": ["cnt", "seller_state"], "rows": [[1849, "SP"], [349, "PR"]]}
+    v = compare(exp, got, dialect="sqlite", ordered=True)
+    assert v.label == "correct" and v.detail["column_map"] == {"n": "cnt"}
+    assert any("위치로 비교함" in h for h in v.hints) and not any("없음" in h for h in v.hints)
+
+
+EMPTY_EXP = {"columns": ["order_id"], "rows": []}
+EMPTY_GOT = {"columns": ["order_id", "order_status"], "rows": []}
+
+
+def test_report3_empty_ok_both_empty_is_correct():
+    v = compare(EMPTY_EXP, EMPTY_GOT, dialect="sqlite", empty_ok=True)
+    assert v.label == "correct" and v.detail["empty_ok"] is True
+    assert v.hints == ["필요 없는 컬럼 포함: order_status"]
+
+
+def test_without_empty_ok_extra_columns_stays_strict():
+    assert compare(EMPTY_EXP, EMPTY_GOT, dialect="sqlite").label == "extra_columns"
+
+
+def test_empty_ok_but_prediction_has_rows():
+    got = {"columns": ["order_id"], "rows": [[1]]}
+    assert compare(EMPTY_EXP, got, dialect="sqlite", empty_ok=True).label == "silent_wrong"
+

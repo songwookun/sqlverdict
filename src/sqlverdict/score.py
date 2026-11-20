@@ -7,6 +7,7 @@ from sqlverdict.normalize import normalize_rows
 
 VERDICTS = ("correct", "correct_approx", "extra_columns", "silent_wrong", "error")
 STATUSES = ("skipped_unverified", "unscorable", "missing_prediction")
+PASSED = ("correct", "correct_approx")
 ERROR_MAX = 300
 MASS_FAIL_MIN, MASS_FAIL_RATIO = 3, 0.2
 
@@ -31,7 +32,7 @@ def _score_item(it, pred, *, golden_dialect, pred_dialect, tolerance,
                     ordered=it.ordered, compare_columns=it.compare_columns,
                     allow_extra_columns=it.allow_extra_columns,
                     tolerance=tolerance if it.tolerance is None else it.tolerance,
-                    pred_sql=pred.pred_sql)
+                    pred_sql=pred.pred_sql, empty_ok=it.empty_ok)
         rec.update(label=v.label, diff=v.detail, hints=v.hints)
         if head:
             rows = normalize_rows(pred.result.rows[:head], pred_dialect or golden_dialect)
@@ -49,6 +50,8 @@ def _summary(records):
     scored = sum(summary[v] for v in VERDICTS)
     summary["scored"] = scored
     summary["accuracy"] = round(summary["correct"] / scored, 3) if scored else None
+    summary["accuracy_with_approx"] = (round((summary["correct"] + summary["correct_approx"]) / scored, 3)
+                                       if scored else None)
     return summary
 
 
@@ -70,9 +73,9 @@ def _baseline_diff(records, baseline):
         prev, now = before.get(r["id"]), r["label"]
         if prev is None or now not in VERDICTS or prev not in VERDICTS:
             continue
-        if prev == "correct" and now != "correct":
+        if prev in PASSED and now not in PASSED:
             regressions.append(r["id"])
-        elif prev != "correct" and now == "correct":
+        elif prev not in PASSED and now in PASSED:
             improvements.append(r["id"])
     return regressions, improvements
 

@@ -147,3 +147,12 @@ def test_control_chars_keep_alignment():
 
 def test_cut_stays_in_width_with_invisible_chars():
     assert _width(_cut("가나다라마" + "\u200b" * 40, 30)) <= 30
+
+
+def test_accuracy_with_approx_shown_only_when_approx():
+    base = report()["summary"]
+    out = render_table(report(summary={**base, "accuracy_with_approx": 0.722}))
+    assert "정확도 66.7% (근사 포함 72.2%)" in out
+    out = render_table(report(summary={**base, "correct_approx": 0, "accuracy_with_approx": 0.667}))
+    assert "근사 포함" not in out
+

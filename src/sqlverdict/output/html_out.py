@@ -1,6 +1,6 @@
 from html import escape
 
-from sqlverdict.output.table import _info, _pct
+from sqlverdict.output.table import _acc, _info, _pct
 from sqlverdict.score import STATUSES, VERDICTS
 
 _CSP = "default-src 'none'; style-src 'unsafe-inline'"
@@ -60,7 +60,7 @@ def render_html(report):
     if run.get("pred_dialect") and run["pred_dialect"] != dialect:
         dialect += f" → {run['pred_dialect']}"
     tol = "-" if run.get("tolerance") is None else f"{run['tolerance'] * 100:g}%"
-    acc = "-" if s["accuracy"] is None else f"{s['accuracy']:.1%}"
+    acc = _acc(s)
 
     parts = [
         "<h1>sqlverdict 보고서</h1>",

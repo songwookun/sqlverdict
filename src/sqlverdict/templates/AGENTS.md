@@ -37,5 +37,5 @@ AI 에이전트는 이 폴더에서 작업할 때 아래 규칙을 그대로 따
 | compare_columns | | 이 컬럼만 비교 |
 | allow_extra_columns | | 예측의 추가 컬럼 허용 |
 | tolerance | | 이 문항의 상대 오차 (기본 0.001 = 0.1%) |
-| empty_ok | | 빈 결과가 정답 |
+| empty_ok | | 빈 결과가 정답. 정답·예측 모두 0행이면 컬럼은 비교하지 않음 |
 | gold_sql | | 정답 SQL (다시 뽑기·검사용) |

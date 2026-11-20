@@ -30,15 +30,13 @@ def cell_match(exp, got, tolerance):
 
 def match_columns(exp_cols, got_cols, want):
     lower = [c.lower() for c in got_cols]
-    by_name = {c: lower.index(c.lower()) for c in want if c.lower() in lower}
-    used = set(by_name.values())
-    mapping = dict(by_name)
+    mapping = {c: lower.index(c.lower()) for c in want if c.lower() in lower}
+    by_name = len(mapping)
+    free = iter(i for i in range(len(got_cols)) if i not in mapping.values())
     for c in want:
-        if c in mapping:
-            continue
-        i = exp_cols.index(c)
-        mapping[c] = i if i < len(got_cols) and i not in used else None
-    matched_by = "name" if len(by_name) == len(want) else "position"
+        if c not in mapping:
+            mapping[c] = next(free, None)
+    matched_by = "name" if by_name == len(want) else "position"
     return mapping, matched_by
 
 
@@ -79,21 +77,29 @@ def _as_result(r):
 
 def compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=None,
             ordered=False, compare_columns=None, allow_extra_columns=False,
-            tolerance=DEFAULT_TOLERANCE, pred_sql=None):
+            tolerance=DEFAULT_TOLERANCE, pred_sql=None, empty_ok=False):
     v = _compare(expected, got, dialect=dialect, expected_dialect=expected_dialect,
                  got_dialect=got_dialect, ordered=ordered, compare_columns=compare_columns,
-                 allow_extra_columns=allow_extra_columns, tolerance=tolerance)
+                 allow_extra_columns=allow_extra_columns, tolerance=tolerance, empty_ok=empty_ok)
     v.hints = build_hints(v.label, v.detail, pred_sql)
     return v
 
 
 def _compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=None,
-             ordered=False, compare_columns=None, allow_extra_columns=False, tolerance=DEFAULT_TOLERANCE):
+             ordered=False, compare_columns=None, allow_extra_columns=False, tolerance=DEFAULT_TOLERANCE,
+             empty_ok=False):
     exp_d = expected_dialect or dialect
     got_d = got_dialect or dialect or exp_d
     if exp_d is None:
         raise ValueError("dialect 또는 expected_dialect가 필요합니다")
     exp, got = _as_result(expected), _as_result(got)
+    if empty_ok and not exp.rows and not got.rows:
+        names = {c.lower() for c in exp.columns}
+        detail = {"expected_rows": 0, "got_rows": 0, "empty_ok": True}
+        extra = [c for c in got.columns if c.lower() not in names]
+        if extra:
+            detail["extra_columns"] = extra
+        return Verdict("correct", detail)
     want = list(compare_columns or exp.columns)
     mapping, matched_by = match_columns(exp.columns, got.columns, want)
     detail = {

@@ -71,7 +71,7 @@ Q004  correct_approx  L3     biz_term   2024년 활성 고객의 평균 주문 �
 | `silent_wrong` | 실행됐는데 결과가 다름 | 중복 조인으로 건수가 3배 | X |
 | `error` | 사용자 쪽 실행이 실패함 | 없는 컬럼 이름 | X |
 
-정확도 = `correct` ÷ 채점한 문항. 반올림 비교를 쓰는 다른 도구와 견줄 때는 `correct + correct_approx`를 보면 된다.
+정확도 = `correct` ÷ 채점한 문항. `accuracy_with_approx` = (`correct` + `correct_approx`) ÷ 채점한 문항 — 반올림 비교를 쓰는 다른 도구와 견줄 때 쓴다(근사 판정이 있으면 표에도 함께 나온다). `--baseline` 비교에서는 `correct`와 `correct_approx`를 모두 맞음으로 보므로, 둘 사이를 오간 것은 "새로 틀림"이 아니다.
 
 채점하지 않은 문항은 판정이 아니라 **상태**로 따로 센다.
 
@@ -82,7 +82,7 @@ Q004  correct_approx  L3     biz_term   2024년 활성 고객의 평균 주문 �
 | `missing_prediction` | 이 문항의 예측이 없음 |
 
 ### 비교 규칙
-- **컬럼 매칭**: 이름이 같으면(대소문자 무시) 그 컬럼끼리, 다르면 위치로(1번째↔1번째). 값이 비슷한 컬럼을 찾아다니지 않는다 — 우연히 같은 값이 맞은 것으로 잡히지 않게.
+- **컬럼 매칭**: 이름이 같으면(대소문자 무시) 그 컬럼끼리, 이름을 못 찾은 정답 컬럼은 이름 매칭에 안 쓰인 예측 컬럼과 순서대로. 값이 비슷한 컬럼을 찾아다니지 않는다 — 우연히 같은 값이 맞은 것으로 잡히지 않게.
 - **행 순서**: 기본은 정렬한 뒤 비교. `ordered: true` 문항만 순서까지 본다.
 - **컬럼 수**: 예측이 더 많으면 `extra_columns`(정답으로 치지 않음, Spider·BIRD 관례). 필요한 컬럼이 없으면 `silent_wrong`.
 
@@ -124,7 +124,7 @@ items:
 | `compare_columns` | | 이 컬럼만 비교 |
 | `allow_extra_columns` | | 예측의 추가 컬럼 허용 |
 | `tolerance` | | 이 문항의 허용 오차 (상대값, 0이면 엄격 비교만) |
-| `empty_ok` | | 빈 결과가 정답 |
+| `empty_ok` | | 빈 결과가 정답. 정답·예측 모두 0행이면 컬럼은 비교하지 않음 (추가 컬럼은 힌트로만) |
 | `gold_sql` | | 정답 SQL. 실행하지 않고 `check`의 검사·다시 뽑기용 |
 
 작성 규칙(함정 섞기, 닫힌 과거 기간만 묻기 등)은 `init`이 만드는 `evals/AGENTS.md`에 있고, 기계로 확인 가능한 것은 `check`가 검사한다.
@@ -214,7 +214,7 @@ v.hints    # ['값이 정확히 2배: 중복 조인·필터 누락 의심',
 
 - `{"columns": [...], "rows": [[...]]}` 형태의 dict도 그대로 넘길 수 있다.
 - DB 마이그레이션 검증처럼 정답과 예측의 DB가 다르면 `expected_dialect="mysql", got_dialect="postgresql"`.
-- 그 밖의 인자: `ordered`, `compare_columns`, `allow_extra_columns`, `tolerance` (골든셋 필드와 같은 뜻).
+- 그 밖의 인자: `ordered`, `compare_columns`, `allow_extra_columns`, `tolerance`, `empty_ok` (골든셋 필드와 같은 뜻).
 
 ## DB별 값 처리 규칙
 
