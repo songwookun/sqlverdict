@@ -333,3 +333,24 @@ def test_empty_ok_but_prediction_has_rows():
     got = {"columns": ["order_id"], "rows": [[1]]}
     assert compare(EMPTY_EXP, got, dialect="sqlite", empty_ok=True).label == "silent_wrong"
 
+
+
+def test_report5_compare_columns_skips_other_golden_names():
+    exp = {"columns": ["state", "n", "avg"], "rows": [["SP", 10, 1.5], ["RJ", 5, 2.5]]}
+    got = {"columns": ["state", "avg", "cnt"], "rows": [["SP", 1.5, 10], ["RJ", 2.5, 5]]}
+    v = compare(exp, got, dialect="sqlite", compare_columns=["state", "n"])
+    assert v.label == "correct" and v.detail["column_map"] == {"n": "cnt"}
+
+
+def test_report6_empty_ok_renamed_column_matches_by_position():
+    got = {"columns": ["cnt"], "rows": []}
+    v = compare(EMPTY_EXP, got, dialect="sqlite", empty_ok=True)
+    assert v.label == "correct" and v.detail["matched_by"] == "position"
+    assert "extra_columns" not in v.detail
+    assert any("위치로 비교함" in h for h in v.hints)
+
+
+def test_empty_ok_missing_golden_column_is_silent_wrong():
+    exp = {"columns": ["a", "b"], "rows": []}
+    v = compare(exp, {"columns": ["x"], "rows": []}, dialect="sqlite", empty_ok=True)
+    assert v.label == "silent_wrong" and v.detail["missing_columns"] == ["b"]

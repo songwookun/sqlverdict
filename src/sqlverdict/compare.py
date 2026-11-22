@@ -32,7 +32,9 @@ def match_columns(exp_cols, got_cols, want):
     lower = [c.lower() for c in got_cols]
     mapping = {c: lower.index(c.lower()) for c in want if c.lower() in lower}
     by_name = len(mapping)
-    free = iter(i for i in range(len(got_cols)) if i not in mapping.values())
+    names = {c.lower() for c in exp_cols}
+    free = iter(i for i in range(len(got_cols))
+                if i not in mapping.values() and lower[i] not in names)
     for c in want:
         if c not in mapping:
             mapping[c] = next(free, None)
@@ -93,13 +95,6 @@ def _compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=
     if exp_d is None:
         raise ValueError("dialect 또는 expected_dialect가 필요합니다")
     exp, got = _as_result(expected), _as_result(got)
-    if empty_ok and not exp.rows and not got.rows:
-        names = {c.lower() for c in exp.columns}
-        detail = {"expected_rows": 0, "got_rows": 0, "empty_ok": True}
-        extra = [c for c in got.columns if c.lower() not in names]
-        if extra:
-            detail["extra_columns"] = extra
-        return Verdict("correct", detail)
     want = list(compare_columns or exp.columns)
     mapping, matched_by = match_columns(exp.columns, got.columns, want)
     detail = {
@@ -111,6 +106,12 @@ def _compare(expected, got, *, dialect=None, expected_dialect=None, got_dialect=
     if missing:
         detail["missing_columns"] = missing
         return Verdict("silent_wrong", detail)
+    if empty_ok and not exp.rows and not got.rows:
+        detail["empty_ok"] = True
+        extra = [col for i, col in enumerate(got.columns) if i not in mapping.values()]
+        if extra:
+            detail["extra_columns"] = extra
+        return Verdict("correct", detail)
     e = _project(normalize_rows(exp.rows, exp_d), [exp.columns.index(c) for c in want])
     g = _project(normalize_rows(got.rows, got_d), [mapping[c] for c in want])
     if len(e) != len(g):

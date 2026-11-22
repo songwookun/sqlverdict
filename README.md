@@ -128,7 +128,7 @@ items:
 | `compare_columns` | | Compare only these columns |
 | `allow_extra_columns` | | Allow extra columns in the prediction |
 | `tolerance` | | Per-item tolerance (relative; 0 = strict only) |
-| `empty_ok` | | An empty result is the correct answer. If golden and prediction both have 0 rows, columns are not compared (extra columns only produce a hint) |
+| `empty_ok` | | An empty result is the correct answer. If golden and prediction both have 0 rows, it is correct as long as every golden column can be matched (by name or position); extra columns only produce a hint |
 | `gold_sql` | | The golden SQL. Never executed; used by `check` and for re-pulling answers |
 
 Authoring rules (mix in trap items, ask only about closed past periods, …) are in the `evals/AGENTS.md` that `init` creates; `check` enforces what can be checked mechanically.
